@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>연구노트 ERD</title>
+<style>
+:root{--line:#dfe3ea;--text:#1d2433;--muted:#6b7488;--primary:#2b6cf0;--navy:#1b2a4a}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Pretendard","Malgun Gothic",system-ui,sans-serif;font-size:13.5px;color:var(--text);background:#f2f4f8}
+header{background:var(--navy);color:#fff;padding:14px 28px;display:flex;gap:16px;align-items:baseline}
+header h1{margin:0;font-size:18px}
+header a{color:#9fc0ff;font-size:13px;margin-left:auto}
+.wrap{max-width:1360px;margin:0 auto;padding:22px 28px 60px}
+h2{font-size:16px;margin:26px 0 10px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px}
+.scroll{overflow:auto}
+#erd{position:relative;width:1320px}
+svg{position:absolute;left:0;top:0;pointer-events:none}
+.tbl{position:absolute;width:262px;background:#fff;border:1.5px solid #8ea2c9;border-radius:8px;box-shadow:0 2px 8px rgba(30,50,100,.12);font-size:12px;overflow:hidden}
+.tbl .h{background:#2b4a85;color:#fff;padding:6px 10px}
+.tbl .h b{font-family:Consolas,monospace;font-size:12.5px;letter-spacing:.2px}
+.tbl .h span{display:block;font-size:11.5px;opacity:.85;margin-top:1px}
+.tbl.ext .h{background:#7a4a1c}
+.tbl.ext{border-color:#c79a6a}
+.tbl ul{list-style:none;margin:0;padding:5px 0}
+.tbl li{padding:2px 10px;display:flex;gap:6px;font-family:Consolas,monospace}
+.tbl li i{font-style:normal;font-weight:700;width:24px;color:#2b4a85;flex:none}
+.tbl li i.fk{color:#b8541b}
+.tbl li em{font-style:normal;font-family:"Malgun Gothic",sans-serif;color:var(--muted);margin-left:auto;font-size:11px;white-space:nowrap}
+table{width:100%;border-collapse:collapse}
+th{background:#f6f8fb;color:var(--muted);text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:8px 10px;border-bottom:1px solid #eef0f4;vertical-align:top}
+td code,.mono{font-family:Consolas,monospace;font-size:12px}
+.card-n{display:inline-block;background:#e8f0fe;color:#1f56c4;font-weight:700;border-radius:4px;padding:0 6px;font-family:Consolas,monospace}
+.legend{display:flex;gap:18px;font-size:12px;color:var(--muted);margin-bottom:10px;flex-wrap:wrap}
+.legend span b{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle}
+</style>
+</head>
+<body>
+<header><h1>연구노트 ERD</h1><span style="opacity:.8">테이블 · 설명 · 관계 요약</span><a href="index.html">← 연구노트 화면으로</a></header>
+<div class="wrap">
+
+<h2>1. ER 다이어그램</h2>
+<div class="card">
+  <div class="legend">
+    <span><b style="background:#2b4a85"></b>연구노트 시스템 테이블</span>
+    <span><b style="background:#7a4a1c"></b>구매팀 관리 마스터 (읽기 전용 참조)</span>
+    <span><span class="card-n">1</span> 부모 쪽 &nbsp; <span class="card-n">N</span> 자식(여러 건) 쪽</span>
+    <span>PK 기본키 · FK 외래키 · UK 유일키</span>
+  </div>
+  <div class="scroll"><div id="erd"><svg id="lines"></svg></div></div>
+</div>
+
+<h2>2. 관계 (1:N)</h2>
+<div class="card"><table id="rel-table"><thead><tr><th style="width:36px">#</th><th>1 (부모)</th><th>N (자식)</th><th>관계</th><th>비고</th></tr></thead><tbody></tbody></table></div>
+
+<h2>3. 테이블 설명</h2>
+<div class="card"><table id="tbl-table"><thead><tr><th style="width:190px">테이블</th><th style="width:130px">한글명</th><th>설명</th></tr></thead><tbody></tbody></table></div>
+
+
+</div>
+
+<script>
+const T={
+  TEAM:{x:30,y:20,ko:'팀',keys:[['PK','team_id'],['','name']],desc:'연구소 내 팀(A팀, B팀 등). 거래처의 담당 팀과 사용자의 소속 팀 기준이 되어 노트 조회 범위를 결정한다.'},
+  USER:{x:360,y:20,ko:'사용자(연구원)',keys:[['PK','user_id'],['FK','team_id'],['','name'],['','initials','관리번호용'],['','role','연구원/소장'],['','on_leave','휴가 중']],desc:'연구원과 연구소장. 소장은 팀 제한 없이 전체 조회, 연구원은 본인 팀 거래처 노트만 조회한다.'},
+  CLIENT:{x:30,y:470,ko:'거래처',keys:[['PK','client_id'],['FK','team_id','담당 팀'],['','name']],desc:'견본을 보내 컨펌을 받는 거래처. 담당 팀이 정해져 있으며, 이 팀 소속 연구원만 해당 거래처 노트를 볼 수 있다.'},
+  NOTE_MEMBER:{x:360,y:270,ko:'노트 담당자',keys:[['PK','note_member_id'],['FK','note_id'],['FK','user_id'],['','role','담당/부담당']],desc:'노트와 사용자의 N:M 연결. 담당자(수정 가능)와 부담당자(담당자 휴가 시 대리 기록)를 구분한다.'},
+  NOTE:{x:360,y:470,ko:'연구노트',keys:[['PK','note_id'],['UK','control_no','관리번호'],['FK','client_id'],['','product_name','가칭'],['','official_name','정식명'],['','started_on'],['','locked_at','컨펌 후 잠금']],desc:'제품 1건의 개발 기록 최상위 단위. 관리번호는 시작일-제품이니셜-담당자이니셜. 컨펌되면 locked_at이 기록되어 처방이 잠긴다.'},
+  NOTE_HISTORY:{x:360,y:760,ko:'노트 이력',keys:[['PK','history_id'],['FK','note_id'],['FK','changed_by'],['','type','생성/차수/컨펌/정보수정'],['','field, before, after'],['','reason','수정 사유']],desc:'잠금 후 담당자 변경, 제품 정식명 변경 같은 정보 수정과 차수 생성, 견본 발송, 컨펌 이벤트를 변경 전/후와 사유와 함께 남기는 이력.'},
+  REVISION:{x:700,y:470,ko:'차수',keys:[['PK','revision_id'],['FK','note_id'],['','round_no','1차, 2차…'],['','status','작성중/발송/컨펌/반려'],['FK','copied_from_id','복사 원본 차수'],['FK','edited_by'],['','is_proxy','대리 기록'],['','viscosity, ph, odor …','결과'],['','result_memo, next_plan'],['','sent_on, confirmed_on']],desc:'노트의 차수. 앞 차수를 복사해 새 차수를 만들며, 점도 · pH · 향 같은 결과와 "다음에 바꿀 것" 메모, 견본 발송일 · 컨펌일을 가진다. 차수별 기록이 그대로 보존된다.'},
+  ATTACHMENT:{x:700,y:230,ko:'첨부파일',keys:[['PK','attachment_id'],['FK','revision_id'],['','file_name, file_path'],['FK','uploaded_by']],desc:'차수에 붙이는 사진과 파일(컨펌 메일, 시험 성적서, 제형 사진 등).'},
+  REVISION_INGREDIENT:{x:1040,y:470,ko:'차수별 처방(원료 행)',keys:[['PK','ingredient_id'],['FK','revision_id'],['FK','material_id','NULL = 미등록'],['','raw_name','미등록 원료명'],['','phase','상(A/B/C)'],['','pct','함량 %'],['','decimals','표시 자리수'],['','sort_no, memo']],desc:'차수 1개에 원료 수십 줄이 들어가는 처방표. 차수마다 별도로 보관되므로 차수 비교와 옛 처방 검색에 쓰인다. 합계는 조회 시 합산해 100%를 검증한다.'},
+  MATERIAL:{x:1040,y:800,ko:'원료 마스터',ext:1,keys:[['PK','material_id'],['','code','구매팀 코드'],['','trade_name','상품명'],['','ingredient_name','성분명'],['','default_decimals','정제수 2 / 향·색소 4']],desc:'구매팀이 관리하는 원료 목록(읽기 전용 참조). 화면에는 상품명(성분명) 형식으로 통일해서 보여준다.'},
+  MATERIAL_ALIAS:{x:700,y:800,ko:'원료 별칭',keys:[['PK','alias_id'],['FK','material_id'],['','alias_name','연구원이 부르는 이름']],desc:'연구원이 쓰는 별칭(BG, 카보머, 시카 등). 검색과 엑셀 붙여넣기에서 자동으로 표준 원료에 연결하는 데 쓴다.'}
+};
+/* p = 1(부모), c = N(자식) */
+const R=[
+  {p:'TEAM',c:'USER',txt:'소속',note:'한 팀에 여러 연구원'},
+  {p:'TEAM',c:'CLIENT',txt:'담당 팀',note:'조회 권한 기준: 거래처의 담당 팀 = 사용자 팀'},
+  {p:'CLIENT',c:'NOTE',txt:'의뢰',note:'한 거래처에 여러 제품 노트'},
+  {p:'NOTE',c:'NOTE_MEMBER',txt:'담당 지정',note:'NOTE와 USER는 N:M → NOTE_MEMBER로 해소'},
+  {p:'USER',c:'NOTE_MEMBER',txt:'담당 · 부담당',note:'한 사용자가 여러 노트의 담당/부담당'},
+  {p:'NOTE',c:'REVISION',txt:'차수',note:'한 노트에 1차, 2차, 3차 …'},
+  {p:'REVISION',c:'REVISION_INGREDIENT',txt:'처방 행',note:'한 차수에 원료 수십 줄'},
+  {p:'MATERIAL',c:'REVISION_INGREDIENT',txt:'사용',note:'미등록 원료는 material_id가 NULL(선택적 관계)'},
+  {p:'MATERIAL',c:'MATERIAL_ALIAS',txt:'별칭',note:'한 원료에 여러 별칭'},
+  {p:'REVISION',c:'ATTACHMENT',txt:'첨부',note:'한 차수에 사진/파일 여러 개'},
+  {p:'NOTE',c:'NOTE_HISTORY',txt:'이력',note:'정보 수정 · 차수 · 컨펌 이력'},
+  {p:'USER',c:'NOTE_HISTORY',txt:'수정자',note:'누가 바꿨는지(changed_by)',elbow:322}
+];
+const erd=document.getElementById('erd');
+Object.entries(T).forEach(([k,t])=>{
+  const d=document.createElement('div');d.className='tbl'+(t.ext?' ext':'');d.id='t-'+k;d.style.left=t.x+'px';d.style.top=t.y+'px';
+  d.innerHTML=`<div class="h"><b>${k}</b><span>${t.ko}</span></div><ul>${t.keys.map(([a,b,c])=>`<li><i class="${a==='FK'?'fk':''}">${a}</i><span>${b}</span>${c?`<em>${c}</em>`:''}</li>`).join('')}</ul>`;
+  erd.appendChild(d);
+});
+function rect(k){const e=document.getElementById('t-'+k);return {x:e.offsetLeft,y:e.offsetTop,w:e.offsetWidth,h:e.offsetHeight}}
+function anchor(r,side,f=.5){
+  if(side==='l')return {x:r.x,y:r.y+r.h*f};
+  if(side==='r')return {x:r.x+r.w,y:r.y+r.h*f};
+  if(side==='t')return {x:r.x+r.w*f,y:r.y};
+  return {x:r.x+r.w*f,y:r.y+r.h};
+}
+function draw(){
+  const svg=document.getElementById('lines');
+  let maxY=0,maxX=0;
+  Object.keys(T).forEach(k=>{const r=rect(k);maxY=Math.max(maxY,r.y+r.h);maxX=Math.max(maxX,r.x+r.w)});
+  erd.style.height=(maxY+30)+'px';erd.style.width=Math.max(1320,maxX+30)+'px';
+  svg.setAttribute('width',erd.style.width);svg.setAttribute('height',erd.style.height);
+  let out='';
+  R.forEach((rel,i)=>{
+    const P=rect(rel.p),C=rect(rel.c);
+    let a,b,pts,dirP,dirC;
+    if(rel.elbow){
+      a=anchor(P,'l',.8);b=anchor(C,'l',.5);
+      pts=[a,{x:rel.elbow,y:a.y},{x:rel.elbow,y:b.y},b];dirP={x:-1,y:0};dirC={x:1,y:0};
+    }else{
+      const overlapX=!(P.x+P.w<C.x||C.x+C.w<P.x);
+      if(overlapX){
+        const pAbove=P.y<C.y;
+        a=anchor(P,pAbove?'b':'t');b=anchor(C,pAbove?'t':'b');
+        const lo=Math.max(P.x,C.x),hi=Math.min(P.x+P.w,C.x+C.w);
+        if(hi-lo>20){a.x=b.x=(lo+hi)/2}
+        dirP={x:0,y:pAbove?1:-1};dirC={x:0,y:pAbove?-1:1};
+      }else{
+        const pLeft=P.x<C.x;
+        a=anchor(P,pLeft?'r':'l');b=anchor(C,pLeft?'l':'r');
+        const lo=Math.max(P.y,C.y),hi=Math.min(P.y+P.h,C.y+C.h);
+        if(hi-lo>20){a.y=b.y=(lo+hi)/2}
+        dirP={x:pLeft?1:-1,y:0};dirC={x:pLeft?-1:1,y:0};
+      }
+      pts=[a,b];
+    }
+    out+=`<polyline points="${pts.map(p=>p.x+','+p.y).join(' ')}" fill="none" stroke="#6f86b5" stroke-width="1.6"/>`;
+    const badge=(p,d,t)=>{const x=p.x+d.x*13+(d.x?0:12),y=p.y+d.y*13+(d.y?0:-9)+(d.x?-10:0);
+      return `<g><circle cx="${x}" cy="${y}" r="8.5" fill="${t==='1'?'#2b6cf0':'#fff'}" stroke="#2b6cf0" stroke-width="1.4"/><text x="${x}" y="${y+4}" text-anchor="middle" font-size="11" font-weight="700" fill="${t==='1'?'#fff':'#2b6cf0'}">${t}</text></g>`};
+    out+=badge(a,dirP,'1')+badge(b,dirC,'N');
+    const mid=pts.length===2?{x:(a.x+b.x)/2,y:(a.y+b.y)/2}:{x:pts[1].x,y:pts[1].y+90};
+    const vertical=Math.abs(a.x-b.x)<1;
+    out+=`<text x="${vertical?mid.x+10:mid.x}" y="${vertical?mid.y+4:mid.y-6}" text-anchor="${vertical?'start':'middle'}" font-size="11" fill="#44558a" style="paint-order:stroke;stroke:#fff;stroke-width:4px">${rel.txt}</text>`;
+  });
+  svg.innerHTML=out;
+}
+const tb=document.querySelector('#rel-table tbody');
+R.forEach((r,i)=>{tb.insertAdjacentHTML('beforeend',`<tr><td>${i+1}</td><td><code>${r.p}</code> <small style="color:#6b7488">${T[r.p].ko}</small></td><td><code>${r.c}</code> <small style="color:#6b7488">${T[r.c].ko}</small></td><td><span class="card-n">1 : N</span> ${r.txt}</td><td>${r.note}</td></tr>`)});
+tb.insertAdjacentHTML('beforeend',`<tr><td>${R.length+1}</td><td><code>REVISION</code> <small style="color:#6b7488">차수</small></td><td><code>REVISION</code> <small style="color:#6b7488">차수 (자기 참조)</small></td><td><span class="card-n">1 : N</span> 복사 원본</td><td>새 차수는 앞 차수를 복사해 만들며 <code>copied_from_id</code>로 원본을 기억 (도식에서는 생략)</td></tr>`);
+const tt=document.querySelector('#tbl-table tbody');
+Object.entries(T).forEach(([k,t])=>tt.insertAdjacentHTML('beforeend',`<tr><td><code>${k}</code>${t.ext?' <small style="color:#a0662a">(구매팀 관리)</small>':''}</td><td>${t.ko}</td><td>${t.desc}</td></tr>`));
+draw();window.addEventListener('load',draw);
+</script>
+</body>
+</html>
